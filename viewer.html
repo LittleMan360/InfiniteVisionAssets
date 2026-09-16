@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinite Vision U.S.A. Safety Products Catalog</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #525659; }
+    * { box-sizing: border-box; }
+    #viewer { width: 100%; padding: 18px 12px; }
+    .pdf-page { display: block; width: 100%; max-width: 1050px; height: auto; margin: 0 auto 18px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+    #status { color: #fff; font: 16px Arial, sans-serif; text-align: center; padding: 30px; }
+    @media (max-width: 600px) { #viewer { padding: 6px 0; } .pdf-page { margin-bottom: 8px; box-shadow: none; } }
+  </style>
+</head>
+<body>
+  <div id="status">Loading catalog…</div>
+  <main id="viewer" aria-label="Infinite Vision U.S.A. Safety Products Catalog"></main>
+
+  <script type="module">
+    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+
+    const pdfUrl = './Infinite_Vision_Safety_Products_Catalog.pdf';
+    const viewer = document.getElementById('viewer');
+    const status = document.getElementById('status');
+
+    try {
+      const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+      status.remove();
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        const page = await pdf.getPage(pageNumber);
+        const baseViewport = page.getViewport({ scale: 1 });
+        const targetWidth = Math.min(1050, Math.max(document.documentElement.clientWidth - 24, 320));
+        const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+        const scale = (targetWidth / baseViewport.width) * outputScale;
+        const viewport = page.getViewport({ scale });
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-page';
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        canvas.style.width = `${Math.floor(viewport.width / outputScale)}px`;
+        canvas.style.height = `${Math.floor(viewport.height / outputScale)}px`;
+        canvas.setAttribute('aria-label', `Catalog page ${pageNumber}`);
+        viewer.appendChild(canvas);
+
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      }
+    } catch (error) {
+      console.error(error);
+      status.textContent = 'The catalog could not be loaded. Please use the Open PDF button.';
+    }
+  </script>
+</body>
+</html>
